@@ -3,9 +3,9 @@
 namespace bstuff\yii2images;
 
 
-use rico\yii2images\models\PlaceHolder;
+use bstuff\yii2images\models\PlaceHolder;
 use yii;
-use rico\yii2images\models\Image;
+use bstuff\yii2images\models\Image;
 
 class Module extends \yii\base\Module
 {
@@ -15,7 +15,7 @@ class Module extends \yii\base\Module
 
     public $graphicsLibrary = 'GD';
 
-    public $controllerNamespace = 'rico\yii2images\controllers';
+    public $controllerNamespace = 'bstuff\yii2images\controllers';
 
     public $placeHolderPath;
 

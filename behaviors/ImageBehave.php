@@ -1,23 +1,13 @@
 <?php
-/**
- * Created by PhpStorm.
- * User: kostanevazno
- * Date: 22.06.14
- * Time: 16:58
- */
 
-namespace rico\yii2images\behaviors;
+namespace bstuff\yii2images\behaviors;
 
-
-use rico\yii2images\models\Image;
-
-use yii;
+use Yii;
 use yii\base\Behavior;
 use yii\db\ActiveRecord;
-use rico\yii2images\models;
-use yii\helpers\BaseFileHelper;
-use \rico\yii2images\ModuleTrait;
-
+use yii\helpers\FileHelper;
+use bstuff\yii2images\ModuleTrait;
+use bstuff\yii2images\models\Image;
 
 
 class ImageBehave extends Behavior
@@ -39,7 +29,7 @@ class ImageBehave extends Behavior
      * @return bool|Image
      * @throws \Exception
      */
-    public function attachImage($absolutePath, $isMain = false, $name = '')
+    public function attachImage($absolutePath, $params = []);
     {
         if(!preg_match('#http#', $absolutePath)){
             if (!file_exists($absolutePath)) {
@@ -52,19 +42,21 @@ class ImageBehave extends Behavior
         if (!$this->owner->primaryKey) {
             throw new \Exception('Owner must have primaryKey when you attach image!');
         }
+        
+        $md5 = md5_file($file->tempName);
+        $folder = substr($md5, 0, 2);
+        $basename = substr($md5, 3);
+        $ext = pathinfo($absolutePath, PATHINFO_EXTENSION) ? (DIRECTORY_SEPARATOR . pathinfo($absolutePath, PATHINFO_EXTENSION)) : '.jpg';
 
-        $pictureFileName =
-            substr(md5(microtime(true) . $absolutePath), 4, 6)
-            . '.' .
-            pathinfo($absolutePath, PATHINFO_EXTENSION);
-        $pictureSubDir = $this->getModule()->getModelSubDir($this->owner);
+        $pictureFileName = $basename . $ext;
+        $pictureSubDir = $this->getModule()->getModelSubDir($this->owner) . DIRECTORY_SEPARATOR . $folder;
         $storePath = $this->getModule()->getStorePath($this->owner);
 
         $newAbsolutePath = $storePath .
             DIRECTORY_SEPARATOR . $pictureSubDir .
             DIRECTORY_SEPARATOR . $pictureFileName;
 
-        BaseFileHelper::createDirectory($storePath . DIRECTORY_SEPARATOR . $pictureSubDir,
+        FileHelper::createDirectory($storePath . DIRECTORY_SEPARATOR . $pictureSubDir,
             0775, true);
 
         copy($absolutePath, $newAbsolutePath);
@@ -73,12 +65,8 @@ class ImageBehave extends Behavior
             throw new \Exception('Cant copy file! ' . $absolutePath . ' to ' . $newAbsolutePath);
         }
 
-        if ($this->getModule()->className === null) {
-            $image = new models\Image;
-        } else {
-            $class = $this->getModule()->className;
-            $image = new $class();
-        }
+        $image = new models\Image;
+
         $image->itemId = $this->owner->primaryKey;
         $image->filePath = $pictureSubDir . '/' . $pictureFileName;
         $image->modelName = $this->getModule()->getShortClass($this->owner);
@@ -90,7 +78,7 @@ class ImageBehave extends Behavior
             return false;
         }
 
-        if (count($image->getErrors()) > 0) {
+        if ($image->getErrors()) {
 
             $ar = array_shift($image->getErrors());
 
@@ -98,10 +86,11 @@ class ImageBehave extends Behavior
             throw new \Exception(array_shift($ar));
         }
         $img = $this->owner->getImage();
-
+        
         //If main image not exists
+        $isMain = isset($params['main']) ? $params['main'] : false;
         if(
-            is_object($img) && get_class($img)=='rico\yii2images\models\PlaceHolder'
+            is_object($img) && get_class($img)=='bstuff\yii2images\models\PlaceHolder'
             or
             $img == null
             or
@@ -109,7 +98,6 @@ class ImageBehave extends Behavior
         ){
             $this->setMainImage($image);
         }
-
 
         return $image;
     }
@@ -292,45 +280,6 @@ class ImageBehave extends Behavior
 
         return $base;
     }
-
-
-
-    /** Make string part of image's url
-     * @return string
-     * @throws \Exception
-     */
-    private function getAliasString()
-    {
-        if ($this->createAliasMethod) {
-            $string = $this->owner->{$this->createAliasMethod}();
-            if (!is_string($string)) {
-                throw new \Exception("Image's url must be string!");
-            } else {
-                return $string;
-            }
-
-        } else {
-            return substr(md5(microtime()), 0, 10);
-        }
-    }
-
-
-    /**
-     *
-     * Обновить алиасы для картинок
-     * Зачистить кэш
-     */
-    private function getAlias()
-    {
-        $aliasWords = $this->getAliasString();
-        $imagesCount = count($this->owner->getImages());
-
-        return $aliasWords . '-' . intval($imagesCount + 1);
-    }
-
-
-
-
 }
 
 

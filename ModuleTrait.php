@@ -1,25 +1,19 @@
 <?php
-/**
- * Created by PhpStorm.
- * User: kostanevazno
- * Date: 17.07.14
- * Time: 0:20
- */
 
-namespace rico\yii2images;
-
+namespace bstuff\yii2images;
 
 use yii\base\Exception;
+
 
 trait ModuleTrait
 {
     /**
-     * @var null|\rico\yii2images\Module
+     * @var null|\bstuff\yii2images\Module
      */
     private $_module;
 
     /**
-     * @return null|\rico\yii2images\Module
+     * @return null|\bstuff\yii2images\Module
      */
     protected function getModule()
     {
@@ -28,7 +22,7 @@ trait ModuleTrait
         }
 
         if(!$this->_module){
-            throw new Exception("\n\n\n\n\nYii2 images module not found, may be you didn't add it to your config?\n\n\n\n");
+            throw new Exception("Yii2 images module not found, may be you didn't add it to your config?");
         }
 
         return $this->_module;
