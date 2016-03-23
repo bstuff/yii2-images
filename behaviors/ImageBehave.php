@@ -29,7 +29,7 @@ class ImageBehave extends Behavior
      * @return bool|Image
      * @throws \Exception
      */
-    public function attachImage($absolutePath, $params = []);
+    public function attachImage($absolutePath, $params = [])
     {
         if(!preg_match('#http#', $absolutePath)){
             if (!file_exists($absolutePath)) {
@@ -43,10 +43,10 @@ class ImageBehave extends Behavior
             throw new \Exception('Owner must have primaryKey when you attach image!');
         }
         
-        $md5 = md5_file($file->tempName);
+        $md5 = md5_file($absolutePath);
         $folder = substr($md5, 0, 2);
         $basename = substr($md5, 3);
-        $ext = pathinfo($absolutePath, PATHINFO_EXTENSION) ? (DIRECTORY_SEPARATOR . pathinfo($absolutePath, PATHINFO_EXTENSION)) : '.jpg';
+        $ext = pathinfo($absolutePath, PATHINFO_EXTENSION) ? ('.' . pathinfo($absolutePath, PATHINFO_EXTENSION)) : '.jpg';
 
         $pictureFileName = $basename . $ext;
         $pictureSubDir = $this->getModule()->getModelSubDir($this->owner) . DIRECTORY_SEPARATOR . $folder;
@@ -65,14 +65,14 @@ class ImageBehave extends Behavior
             throw new \Exception('Cant copy file! ' . $absolutePath . ' to ' . $newAbsolutePath);
         }
 
-        $image = new models\Image;
+        $image = new Image([
+          'itemId' => $this->owner->primaryKey,
+          'filePath' =>  $pictureSubDir . '/' . $pictureFileName,
+          'modelName' => $this->getModule()->getShortClass($this->owner),
+          'modelTableName' => preg_replace('/[{}%]/', '', $this->owner->tableName()),
+          'name' => isset($params['name']) ? $params['name'] : null,
+        ]);
 
-        $image->itemId = $this->owner->primaryKey;
-        $image->filePath = $pictureSubDir . '/' . $pictureFileName;
-        $image->modelName = $this->getModule()->getShortClass($this->owner);
-        $image->name = $name;
-
-        $image->urlAlias = $this->getAlias($image);
 
         if(!$image->save()){
             return false;
@@ -165,22 +165,17 @@ class ImageBehave extends Behavior
      */
     public function getImages()
     {
-        $finder = $this->getImagesFinder();
+        $imgs = Image::find()
+          ->where([
+            'itemId' => $this->owner->primaryKey,
+            'modelTableName' => preg_replace('/[{}%]/', '', $this->owner->tableName()),
+          ])
+          ->orderBy(['isMain' => SORT_DESC, 'sortOrder' => SORT_ASC])
+          ->all();
 
-        if ($this->getModule()->className === null) {
-            $imageQuery = Image::find();
-        } else {
-            $class = $this->getModule()->className;
-            $imageQuery = $class::find();
-        }
-        $imageQuery->where($finder);
-        $imageQuery->orderBy(['isMain' => SORT_DESC, 'id' => SORT_ASC]);
-
-        $imageRecords = $imageQuery->all();
-        if(!$imageRecords){
+        if(!$imgs){
             return [$this->getModule()->getPlaceHolder()];
         }
-        return $imageRecords;
     }
 
 
@@ -190,17 +185,14 @@ class ImageBehave extends Behavior
      */
     public function getImage()
     {
-        if ($this->getModule()->className === null) {
-            $imageQuery = Image::find();
-        } else {
-            $class = $this->getModule()->className;
-            $imageQuery = $class::find();
-        }
-        $finder = $this->getImagesFinder(['isMain' => 1]);
-        $imageQuery->where($finder);
-        $imageQuery->orderBy(['isMain' => SORT_DESC, 'id' => SORT_ASC]);
+        $img = Image::find()
+          ->where([
+            'itemId' => $this->owner->primaryKey,
+            'modelTableName' => preg_replace('/[{}%]/', '', $this->owner->tableName()),
+          ])
+          ->orderBy(['isMain' => SORT_DESC, 'sortOrder' => SORT_ASC])
+          ->one();
 
-        $img = $imageQuery->one();
         if(!$img){
             return $this->getModule()->getPlaceHolder();
         }
@@ -247,9 +239,7 @@ class ImageBehave extends Behavior
         }
     }
 
-
     /**
-     *
      * removes concrete model's image
      * @param Image $img
      * @throws \Exception
@@ -266,19 +256,9 @@ class ImageBehave extends Behavior
         }
         $img->delete();
     }
-
-    private function getImagesFinder($additionWhere = false)
-    {
-        $base = [
-            'itemId' => $this->owner->primaryKey,
-            'modelName' => $this->getModule()->getShortClass($this->owner)
-        ];
-
-        if ($additionWhere) {
-            $base = \yii\helpers\BaseArrayHelper::merge($base, $additionWhere);
-        }
-
-        return $base;
+    
+    private function getNewFilename(){
+      return;
     }
 }
 
