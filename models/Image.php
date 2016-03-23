@@ -131,7 +131,7 @@ class Image extends \yii\db\ActiveRecord
     public function rules()
     {
         return [
-            [['filePath', 'itemId', 'modelName', 'modelTableName'], 'required'],
+            [['filePath', 'itemId', 'modelTableName'], 'required'],
             [['itemId', 'sortOrder'], 'integer'],
             [['filePath', 'modelName', 'modelTableName'], 'string', 'max' => 255],
             [['name'], 'string', 'max' => 64],
@@ -150,7 +150,6 @@ class Image extends \yii\db\ActiveRecord
             'filePath' => 'File Path',
             'itemId' => 'Item ID',
             'isMain' => 'Is Main',
-            'modelName' => 'Model Name',
         ];
     }
 
@@ -162,7 +161,7 @@ class Image extends \yii\db\ActiveRecord
     }
 
     public function getPath($params = []){
-        $filePath = $this->getFilepath($params);
+        $filePath = \yii\helpers\FileHelper::normalizePath($this->getFilepath($params)) ;
         if(!file_exists($filePath)){
             $this->createVersion($params);
 
@@ -170,7 +169,6 @@ class Image extends \yii\db\ActiveRecord
                 throw new \Exception('Problem with image creating.');
             }
         }
-        edump();
         return $filePath;
     }
     
@@ -234,16 +232,32 @@ class Image extends \yii\db\ActiveRecord
     {
       $x = isset($params['x']) ? $params['x'] : null;
       $y = isset($params['y']) ? $params['y'] : null;
-      $fit = isset($params['fit']) ? \Imagine\Image\ManipulatorInterface::THUMBNAIL_INSET : \Imagine\Image\ManipulatorInterface::THUMBNAIL_OUTBOUND;
+      $fit = \Imagine\Image\ManipulatorInterface::THUMBNAIL_OUTBOUND;
+
+      if (isset($params['fit'])) {
+        if($params['fit']) {
+          $fit = \Imagine\Image\ManipulatorInterface::THUMBNAIL_INSET;
+        }
+      }
 
       $filePath = $this->getFilepath($params);
 
       if (!is_dir( pathinfo($filePath, PATHINFO_DIRNAME) )) {
-        \yii\helpers\FileHelper::createDirectory($filePath,
+        \yii\helpers\FileHelper::createDirectory(pathinfo($filePath, PATHINFO_DIRNAME),
             0775, true);
       }
-
-      \yii\imagine\Image::thumbnail($this->getPathToOrigin(), $x, $y, $fit)
-        ->save($filePath);
+      
+      if(!($x || $y)) {
+        \yii\imagine\Image::getImagine()
+          ->open($this->getPathToOrigin())
+          ->save($filePath);
+      } elseif ($x && $y) {
+        
+        \yii\imagine\Image::thumbnail($this->getPathToOrigin(), $x, $y, $fit)
+          ->save($filePath);
+      } else {
+        \yii\imagine\Image::thumbnail($this->getPathToOrigin(), $x, $y, $fit)
+          ->save($filePath);
+      }
     }
 }

@@ -68,7 +68,6 @@ class ImageBehave extends Behavior
         $image = new Image([
           'itemId' => $this->owner->primaryKey,
           'filePath' =>  $pictureSubDir . '/' . $pictureFileName,
-          'modelName' => $this->getModule()->getShortClass($this->owner),
           'modelTableName' => preg_replace('/[{}%]/', '', $this->owner->tableName()),
           'name' => isset($params['name']) ? $params['name'] : null,
         ]);
