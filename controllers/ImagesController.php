@@ -24,6 +24,14 @@ class ImagesController extends Controller
       ];
       
       if ($image = Image::findOne($id)) {
+        
+        //edump(\Yii::$app->response->getHeaders());
+        
+        //header('Content-Disposition: attachment; filename="1.png"');
+        header('Content-Type: ' . $image->getMimeType());
+        echo(file_get_contents($image->getPath($params)) );
+        exit;
+            return;
         return \Yii::$app->response->sendFile($image->getPath($params));
       } else {
           throw new \yii\web\HttpException(404, 'There is no image');

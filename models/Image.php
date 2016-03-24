@@ -17,40 +17,28 @@ namespace bstuff\yii2images\models;
 use Yii;
 use yii\base\Exception;
 use yii\helpers\Url;
-use yii\helpers\BaseFileHelper;
+use yii\helpers\FileHelper;
 use bstuff\yii2images\ModuleTrait;
+use bstuff\yii2images\Imagine;
 
 
 class Image extends \yii\db\ActiveRecord
 {
     use ModuleTrait;
 
-
+    //! del
     public function clearCache(){
         $subDir = $this->getSubDur();
 
         $dirToRemove = $this->getModule()->getCachePath().DIRECTORY_SEPARATOR.$subDir;
 
         if(preg_match('/'.preg_quote($this->modelName, '/').'/', $dirToRemove)){
-            BaseFileHelper::removeDirectory($dirToRemove);
+            FileHelper::removeDirectory($dirToRemove);
 
         }
 
         return true;
     }
-
-/*
-    public function getUrl($size = false){
-        $urlSize = ($size) ? '_'.$size : '';
-        $url = Url::toRoute([
-            '/'.$this->getModule()->id.'/images/image-by-item-and-alias',
-            'item' => $this->modelName.$this->itemId,
-            'dirtyAlias' =>  $this->urlAlias.$urlSize.'.'.$this->getExtension()
-        ]);
-
-        return $url;
-    }
-*/
 
     public function getPathToOrigin(){
 
@@ -161,7 +149,16 @@ class Image extends \yii\db\ActiveRecord
     }
 
     public function getPath($params = []){
-        $filePath = \yii\helpers\FileHelper::normalizePath($this->getFilepath($params)) ;
+        $filePath = FileHelper::normalizePath($this->getFilepath($params));
+
+/*
+if(file_exists($filePath)){
+try {
+unlink($filePath);
+} catch (Exception $e) {}
+}
+*/
+        
         if(!file_exists($filePath)){
             $this->createVersion($params);
 
@@ -175,6 +172,10 @@ class Image extends \yii\db\ActiveRecord
     public function getExtension(){
         $ext = pathinfo($this->getPathToOrigin(), PATHINFO_EXTENSION);
         return $ext;
+    }
+
+    public function getMimeType(){
+        return FileHelper::getMimeType($this->getPathToOrigin());
     }
 
     public function getFilename(){
@@ -193,7 +194,7 @@ class Image extends \yii\db\ActiveRecord
           .'.'.$this->getExtension();
     }
 
-    private function getImageSuffix($params = []) {
+    public function getImageSuffix($params = []) {
       
       $x = isset($params['x']) ? $params['x'] : null;
       $y = isset($params['y']) ? $params['y'] : null;
@@ -243,21 +244,12 @@ class Image extends \yii\db\ActiveRecord
       $filePath = $this->getFilepath($params);
 
       if (!is_dir( pathinfo($filePath, PATHINFO_DIRNAME) )) {
-        \yii\helpers\FileHelper::createDirectory(pathinfo($filePath, PATHINFO_DIRNAME),
+        FileHelper::createDirectory(pathinfo($filePath, PATHINFO_DIRNAME),
             0775, true);
       }
       
-      if(!($x || $y)) {
-        \yii\imagine\Image::getImagine()
-          ->open($this->getPathToOrigin())
-          ->save($filePath);
-      } elseif ($x && $y) {
-        
-        \yii\imagine\Image::thumbnail($this->getPathToOrigin(), $x, $y, $fit)
-          ->save($filePath);
-      } else {
-        \yii\imagine\Image::thumbnail($this->getPathToOrigin(), $x, $y, $fit)
-          ->save($filePath);
-      }
+      Imagine::fitted($this->getPathToOrigin(), $x, $y, $fit)
+        ->save($filePath);
+
     }
 }
