@@ -28,15 +28,17 @@ class GetImageRule extends UrlRule
     {
         $pathInfo = $request->getPathInfo();
         $params = [];
-        if (preg_match("/model-image\/(\d+)_([x\d]+)(_fit)?/", $pathInfo, $matches)) {
+        if (preg_match("/model-image\/(\d+)([_x\d]+)?(_fit)?/", $pathInfo, $matches)) {
           
           if (Image::find($matches[1])->exists()) {
             $params['id'] = $matches[1];
-            if (preg_match('/((^)|(\d+))x(($)|(\d+))/', $matches[2], $size)) {
-              if (isset($size[3])) if($size[3]) $params['x'] = (int)$size[3];
-              if (isset($size[4])) if($size[4]) $params['y'] = (int)$size[4];
+            if (isset($matches[2])) {
+              if (preg_match('/((^)|(\d+))x(($)|(\d+))/', $matches[2], $size)) {
+                if (isset($size[3])) if($size[3]) $params['x'] = (int)$size[3];
+                if (isset($size[4])) if($size[4]) $params['y'] = (int)$size[4];
+              }
+                if (isset($matches[3])) if($matches[3]=='_fit') $params['fit'] = true;
             }
-              if (isset($matches[3])) if($matches[3]=='_fit') $params['fit'] = true;
             return ['/yii2images/images/get-image', $params];
           }
         }

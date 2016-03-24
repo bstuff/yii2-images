@@ -19,42 +19,29 @@ use yii;
 
 class PlaceHolder extends Image
 {
-
-    private $modelName = '';
+    public $placeholderName = 'default';
     private $itemId = '';
-    public $filePath = 'placeHolder.png';
-    public $urlAlias = 'placeHolder';
 
-
-    /*  public function getUrl($size = false){
-          $url = $this->getModule()->placeHolderUrl;
-          if(!$url){
-              throw new \Exception('PlaceHolder image must have url setting!!!');
-          }
-          return $url;
-      }*/
-
-    public function __construct()
-    {
-        $this->filePath =basename(Yii::getAlias($this->getModule()->placeHolderPath)) ;
-    }
-
+    public function init() {
+      parent::init();
+      $this->filePath = $this->getModule()->placeholders[$this->placeholderName];
+      }
     public function getPathToOrigin()
     {
-
-        $url = Yii::getAlias($this->getModule()->placeHolderPath);
+        $url = Yii::getAlias($this->getModule()->placeHolderPath) . DIRECTORY_SEPARATOR . $this->filePath;;
+        
         if (!$url) {
             throw new \Exception('PlaceHolder image must have path setting!!!');
         }
         return $url;
     }
 
-    protected  function getSubDur(){
-        return 'placeHolder';
-    }
     public function setMain($isMain = true){
         throw new yii\base\Exception('You must not set placeHolder as main image!!!');
     }
 
+    public function save($runValidation = true, $attributeNames = NULL){
+        throw new yii\base\Exception('You must not save placeHolder!');
+    }
 }
 

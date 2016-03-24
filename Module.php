@@ -15,6 +15,9 @@ class Module extends \yii\base\Module
 
     public $graphicsLibrary = 'GD';
 
+    //сколько директорий находится выше файла (0-15);
+    public $fileStoreDepth = 1;
+
     public $controllerNamespace = 'bstuff\yii2images\controllers';
 
     public $placeHolderPath;
@@ -22,7 +25,8 @@ class Module extends \yii\base\Module
     public $waterMark = false;
 
     public $className;
-
+    
+    public $placeholders;
 
     public function getStorePath()
     {
@@ -56,7 +60,9 @@ class Module extends \yii\base\Module
             $this->imagesCachePath == '@app'
         )
             throw new \Exception('Setup imagesStorePath and imagesCachePath images module properties!!!');
-        // custom initialization code goes here
+        if ($this->fileStoreDepth > 15) $this->fileStoreDepth = 15;
+        if ($this->fileStoreDepth < 0) $this->fileStoreDepth = 0;
+        $this->placeholders = array_merge((array)$this->placeholders, ['default' => 'placeholder.png']);
     }
 
     public function getPlaceHolder(){

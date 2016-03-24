@@ -8,14 +8,15 @@ use yii\db\ActiveRecord;
 use yii\helpers\FileHelper;
 use bstuff\yii2images\ModuleTrait;
 use bstuff\yii2images\models\Image;
+use bstuff\yii2images\models\PlaceHolder;
 
 
 class ImageBehave extends Behavior
 {
-
     use ModuleTrait;
-    public $createAliasMethod = false;
-
+    
+    public $placeholderName = 'default';
+    
     /**
      * @var ActiveRecord|null Model class, which will be used for storing image data in db, if not set default class(models/Image) will be used
      */
@@ -35,39 +36,25 @@ class ImageBehave extends Behavior
             if (!file_exists($absolutePath)) {
                 throw new \Exception('File not exist! :'.$absolutePath);
             }
-        }else{
-            //nothing
         }
 
         if (!$this->owner->primaryKey) {
             throw new \Exception('Owner must have primaryKey when you attach image!');
         }
         
-        $md5 = md5_file($absolutePath);
-        $folder = substr($md5, 0, 2);
-        $basename = substr($md5, 3);
-        $ext = pathinfo($absolutePath, PATHINFO_EXTENSION) ? ('.' . pathinfo($absolutePath, PATHINFO_EXTENSION)) : '.jpg';
+        $newFile = $this->getNewFilename($absolutePath);
 
-        $pictureFileName = $basename . $ext;
-        $pictureSubDir = $this->getModule()->getModelSubDir($this->owner) . DIRECTORY_SEPARATOR . $folder;
-        $storePath = $this->getModule()->getStorePath($this->owner);
+        FileHelper::createDirectory($newFile['absoluteDir'], 0775, true);
 
-        $newAbsolutePath = $storePath .
-            DIRECTORY_SEPARATOR . $pictureSubDir .
-            DIRECTORY_SEPARATOR . $pictureFileName;
+        copy($absolutePath, $newFile['newAbsolutePath']);
 
-        FileHelper::createDirectory($storePath . DIRECTORY_SEPARATOR . $pictureSubDir,
-            0775, true);
-
-        copy($absolutePath, $newAbsolutePath);
-
-        if (!file_exists($newAbsolutePath)) {
-            throw new \Exception('Cant copy file! ' . $absolutePath . ' to ' . $newAbsolutePath);
+        if (!file_exists($newFile['newAbsolutePath'])) {
+            throw new \Exception('Cant copy file! ' . $absolutePath . ' to ' . $newFile['newAbsolutePath']);
         }
 
         $image = new Image([
           'itemId' => $this->owner->primaryKey,
-          'filePath' =>  $pictureSubDir . '/' . $pictureFileName,
+          'filePath' =>  $newFile['pictureSubDir'] . DIRECTORY_SEPARATOR . $newFile['filename'],
           'modelTableName' => preg_replace('/[{}%]/', '', $this->owner->tableName()),
           'name' => isset($params['name']) ? $params['name'] : null,
         ]);
@@ -81,7 +68,7 @@ class ImageBehave extends Behavior
 
             $ar = array_shift($image->getErrors());
 
-            unlink($newAbsolutePath);
+            unlink($newFile['newAbsolutePath']);
             throw new \Exception(array_shift($ar));
         }
         $img = $this->owner->getImage();
@@ -193,7 +180,7 @@ class ImageBehave extends Behavior
           ->one();
 
         if(!$img){
-            return $this->getModule()->getPlaceHolder();
+            return $this->getPlaceHolder();
         }
 
         return $img;
@@ -256,8 +243,35 @@ class ImageBehave extends Behavior
         $img->delete();
     }
     
-    private function getNewFilename(){
-      return;
+    private function getNewFilename($absolutePath){
+        $basename = md5_file($absolutePath);
+        $ext = pathinfo($absolutePath, PATHINFO_EXTENSION) ? ('.' . pathinfo($absolutePath, PATHINFO_EXTENSION)) : '.jpg';
+        
+        $depth = $this->getModule()->fileStoreDepth;
+
+        $subPath = [];
+        for ($i = 0; $i < $depth; $i++){
+          $subPath[] = substr($basename, 0, 2);
+          $basename = substr($basename, 2);
+        }
+        $pictureSubDir = implode(DIRECTORY_SEPARATOR, $subPath);
+        array_unshift($subPath, $this->getModule()->getStorePath($this->owner));
+        $storePath = implode(DIRECTORY_SEPARATOR, $subPath);
+
+        $pictureFileName = $basename . $ext;
+
+        return [
+          'newAbsolutePath' => $storePath . DIRECTORY_SEPARATOR . $pictureFileName,
+          'filename' => $pictureFileName,
+          'pictureSubDir' => $pictureSubDir,
+          'absoluteDir' => $storePath,
+        ];
+    }
+    
+    public function getPlaceHolder() {
+      return new PlaceHolder([
+        'placeholderName' => $this->placeholderName,
+      ]);
     }
 }
 

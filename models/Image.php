@@ -72,8 +72,6 @@ class Image extends \yii\db\ActiveRecord
             throw new \Exception('Bad size..');
         }
 
-
-
         $sizes = $this->getSizes();
 
         $imageWidth = $sizes['width'];
@@ -143,14 +141,8 @@ class Image extends \yii\db\ActiveRecord
 
     public function getUrl($params = []){
         $params['id'] = $this->id;
-        
-        $url = Url::toRoute(array_merge(['/'.$this->getModule()->id.'/images/get-image'], $params));
-        return $url;
-    }
 
-    public function getPath($params = []){
         $filePath = FileHelper::normalizePath($this->getFilepath($params));
-
 /*
 if(file_exists($filePath)){
 try {
@@ -158,13 +150,23 @@ unlink($filePath);
 } catch (Exception $e) {}
 }
 */
-        
         if(!file_exists($filePath)){
             $this->createVersion($params);
-
             if(!file_exists($filePath)){
                 throw new \Exception('Problem with image creating.');
             }
+        }
+        
+        $url = ($this instanceof PlaceHolder) ?
+          Url::toRoute(array_merge(['/'.$this->getModule()->id.'/images/placeholder'], $params, ['name' => $this->placeholderName])):
+          Url::toRoute(array_merge(['/'.$this->getModule()->id.'/images/get-image'], $params));
+        return $url;
+    }
+
+    public function getPath($params = []){
+        $filePath = FileHelper::normalizePath($this->getFilepath($params));
+        if(!file_exists($filePath)){
+            throw new \Exception('Такого размера картинки нет.');
         }
         return $filePath;
     }
@@ -179,8 +181,7 @@ unlink($filePath);
     }
 
     public function getFilename(){
-        $fn = pathinfo($this->getPathToOrigin(), PATHINFO_FILENAME);
-        return $fn;
+       return pathinfo($this->getPathToOrigin(), PATHINFO_FILENAME);
     }
 
     private function getFilepath($params = []){
@@ -250,6 +251,5 @@ unlink($filePath);
       
       Imagine::fitted($this->getPathToOrigin(), $x, $y, $fit)
         ->save($filePath);
-
     }
 }
