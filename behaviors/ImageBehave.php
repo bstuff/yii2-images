@@ -61,16 +61,13 @@ class ImageBehave extends Behavior
 
 
         if(!$image->save()){
-            return false;
-        }
-
-        if ($image->getErrors()) {
-
             $ar = array_shift($image->getErrors());
 
             unlink($newFile['newAbsolutePath']);
             throw new \Exception(array_shift($ar));
+            return false;
         }
+
         $img = $this->owner->getImage();
         
         //If main image not exists
