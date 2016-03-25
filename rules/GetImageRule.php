@@ -28,7 +28,7 @@ class GetImageRule extends UrlRule
     {
         $pathInfo = $request->getPathInfo();
         $params = [];
-        if (preg_match("/model-image\/(\d+)([_x\d]+)?(_fit)?/", $pathInfo, $matches)) {
+        if (preg_match("/model-image\/(\d+)_([x\d]+)?(_fit)?/", $pathInfo, $matches)) {
           
           if (Image::find($matches[1])->exists()) {
             $params['id'] = $matches[1];

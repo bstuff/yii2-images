@@ -234,13 +234,7 @@ unlink($filePath);
     {
       $x = isset($params['x']) ? $params['x'] : null;
       $y = isset($params['y']) ? $params['y'] : null;
-      $fit = \Imagine\Image\ManipulatorInterface::THUMBNAIL_OUTBOUND;
-
-      if (isset($params['fit'])) {
-        if($params['fit']) {
-          $fit = \Imagine\Image\ManipulatorInterface::THUMBNAIL_INSET;
-        }
-      }
+      $fit = isset($params['fit']) ? ($params['fit'] == true ? true:false) : false;
 
       $filePath = $this->getFilepath($params);
 
