@@ -26,21 +26,8 @@ class Image extends \yii\db\ActiveRecord
 {
     use ModuleTrait;
 
-    //! del
-    public function clearCache(){
-        $subDir = $this->getSubDur();
 
-        $dirToRemove = $this->getModule()->getCachePath().DIRECTORY_SEPARATOR.$subDir;
-
-        if(preg_match('/'.preg_quote($this->modelName, '/').'/', $dirToRemove)){
-            FileHelper::removeDirectory($dirToRemove);
-
-        }
-
-        return true;
-    }
-
-    public function getPathToOrigin(){
+    public function getPathToOrigin() {
 
         $base = $this->getModule()->getStorePath();
 
@@ -52,42 +39,13 @@ class Image extends \yii\db\ActiveRecord
 
     public function getSizes()
     {
-        $sizes = false;
-        if($this->getModule()->graphicsLibrary == 'Imagick'){
-            $image = new \Imagick($this->getPathToOrigin());
-            $sizes = $image->getImageGeometry();
-        }else{
-            $image = new \abeautifulsite\SimpleImage($this->getPathToOrigin());
-            $sizes['width'] = $image->get_width();
-            $sizes['height'] = $image->get_height();
+        if ($size = Imagine::getImagine()->open(Yii::getAlias($filename))->getSize()) {
+          return [
+            'w' => $size->getWidth(),
+            'h' => $size->getHeight(),
+          ]; 
         }
-
-        return $sizes;
-    }
-
-    public function getSizesWhen($sizeString){
-
-        $size = $this->getModule()->parseSize($sizeString);
-        if(!$size){
-            throw new \Exception('Bad size..');
-        }
-
-        $sizes = $this->getSizes();
-
-        $imageWidth = $sizes['width'];
-        $imageHeight = $sizes['height'];
-        $newSizes = [];
-        if(!$size['width']){
-            $newWidth = $imageWidth*($size['height']/$imageHeight);
-            $newSizes['width'] = intval($newWidth);
-            $newSizes['height'] = $size['height'];
-        }elseif(!$size['height']){
-            $newHeight = intval($imageHeight*($size['width']/$imageWidth));
-            $newSizes['width'] = $size['width'];
-            $newSizes['height'] = $newHeight;
-        }
-
-        return $newSizes;
+        return false;
     }
 
     public function setMain($isMain = true){
@@ -96,11 +54,6 @@ class Image extends \yii\db\ActiveRecord
         }else{
             $this->isMain = 0;
         }
-
-    }
-
-    protected function getSubDur(){
-        return \yii\helpers\Inflector::pluralize($this->modelName).'/'.$this->modelName.$this->itemId;
     }
 
     /**
@@ -143,13 +96,7 @@ class Image extends \yii\db\ActiveRecord
         $params['id'] = $this->id;
 
         $filePath = FileHelper::normalizePath($this->getFilepath($params));
-/*
-if(file_exists($filePath)){
-try {
-unlink($filePath);
-} catch (Exception $e) {}
-}
-*/
+
         if(!file_exists($filePath)){
             $this->createVersion($params);
             if(!file_exists($filePath)){
@@ -245,5 +192,25 @@ unlink($filePath);
       
       Imagine::fitted($this->getPathToOrigin(), $x, $y, $fit)
         ->save($filePath);
+    }
+
+    public function clearCache() {
+        if ($this instanceof PlaceHolder) return false;
+        
+        $pathinfo = pathinfo($this->getFilepath());
+        $base = FileHelper::normalizePath($pathinfo['dirname']);
+      
+        if ($files = FileHelper::findFiles($pathinfo['dirname'], [
+          'recursive' => false,
+        ]) ) {
+          $filename = $base . DIRECTORY_SEPARATOR . $pathinfo['filename'];
+          foreach ($files as $file) {
+            if (!substr_compare($file, $filename, 0, strlen($filename))) {
+              unlink($file);
+            }
+          }
+        }
+
+        return true;
     }
 }
