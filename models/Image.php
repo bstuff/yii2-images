@@ -195,7 +195,7 @@ unlink($filePath);
           .'.'.$this->getExtension();
     }
 
-    public function getImageSuffix($params = []) {
+    public static function getImageSuffix($params = []) {
       
       $x = isset($params['x']) ? $params['x'] : null;
       $y = isset($params['y']) ? $params['y'] : null;
