@@ -146,19 +146,27 @@ class ImageBehave extends Behavior
      * First image alwats must be main image
      * @return array|yii\db\ActiveRecord[]
      */
-    public function getImages()
+    public function getImages($params = [])
     {
-        $imgs = Image::find()
+	    	$query = Image::find()
           ->where([
             'itemId' => $this->owner->primaryKey,
             'modelTableName' => preg_replace('/[{}%]/', '', $this->owner->tableName()),
           ])
-          ->orderBy(['isMain' => SORT_DESC, 'sortOrder' => SORT_ASC])
+          ->orderBy(['isMain' => SORT_DESC, 'sortOrder' => SORT_ASC]);
+          
+        if (isset($params['name']) ) {
+	        $query->andWhere(['name' => $params['name']]);
+        }
+        
+        $imgs = $query
           ->all();
 
         if(!$imgs){
             return [$this->getModule()->getPlaceHolder()];
         }
+
+        return $imgs;
     }
 
 
