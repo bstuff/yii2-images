@@ -3,10 +3,10 @@
 namespace bstuff\yii2images\rules;
 
 use yii\web\UrlRuleInterface;
-use yii\web\UrlRule;
+use yii\base\Object;
 use bstuff\yii2images\models\Image;
 
-class GetImageRule extends UrlRule
+class GetImageRule extends Object implements UrlRuleInterface
 {
     public $prefix = 'model-image';
     
