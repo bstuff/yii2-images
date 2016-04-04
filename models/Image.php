@@ -51,6 +51,11 @@ class Image extends \yii\db\ActiveRecord
     public function setMain($isMain = true){
         if($isMain){
             $this->isMain = 1;
+            Yii::$app->db->createCommand()->update($this->tableName(), ['isMain' => false], [
+              'modelTableName' => $this->modelTableName,
+              'itemId' => $this->itemId,
+              'name' => $this->name
+            ])->execute(); 
         }else{
             $this->isMain = 0;
         }
@@ -212,5 +217,22 @@ class Image extends \yii\db\ActiveRecord
         }
 
         return true;
+    }
+    
+    public function isUnique() {
+      return $this->find()->where(['filePath' => $this->filePath])->count() == 1;
+    }
+    
+    public function beforeDelete()
+    {
+        if (parent::beforeDelete()) {
+            if ($this->isUnique()) {
+              $this->clearCache();
+              unlink($this->getModule()->getStorePath() . DIRECTORY_SEPARATOR . $this->filePath);
+            }
+            return true;
+        } else {
+            return false;
+        }
     }
 }

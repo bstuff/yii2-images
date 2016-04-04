@@ -18,11 +18,12 @@ class ApiController extends Controller
         echo "Hello, man. It's ok, dont worry.";
     }
     
-    public function actionGetImages($id=null, $name=null, $modelTableName=null) {
+    public function actionGetImages($itemId=null, $name=null, $modelTableName=null) {
 			Yii::$app->response->format = \yii\web\Response::FORMAT_JSON;
 	    $response = [];
 	    $images = Image::find()
 	    	->andFilterWhere([
+		    	'itemId' => $itemId,
 		    	'name' => $name,
 		    	'modelTableName' => $modelTableName,
 	    	])

@@ -51,7 +51,7 @@ class GetImageRule extends Object implements UrlRuleInterface
 
         if (preg_match("/" . $this->prefix . "\/placeholders\/(\w+)/", $pathInfo, $matches)) {
           $str = $matches[1];
-
+          $params = [];
           if (substr($str, -4) == '_fit') {
             $params['fit'] = true;
             $str = substr($str, 0, -4);
@@ -65,16 +65,19 @@ class GetImageRule extends Object implements UrlRuleInterface
             }
           }
           $params['name'] = $str;
+
           return ['/yii2images/images/placeholder', $params];
         }
 
         return false;  // this rule does not apply
     }
+    
     private function checkValidSizeSuffix($suffix) {
       return preg_match("/\d+x\d+/", $suffix)
         || preg_match("/x\d+/", $suffix)
         || preg_match("/\d+x/", $suffix);
     }
+    
     private function parseSizeSuffix($suffix) {
       $params = [];
       if (preg_match('/((^)|(\d+))x(($)|(\d+))/', $suffix, $size)) {

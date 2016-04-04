@@ -6,6 +6,7 @@ use Yii;
 
 use yii\web\Controller;
 use bstuff\yii2images\models\Image;
+use bstuff\yii2images\models\ImageSearch;
 use bstuff\yii2images\models\PlaceHolder;
 use bstuff\yii2images\ModuleTrait;
 
@@ -15,7 +16,21 @@ class ImagesController extends Controller
 
     public function actionIndex()
     {
+        $searchModel = new ImageSearch();
+        $dataProvider = $searchModel->search(Yii::$app->request->queryParams);
+
+        return $this->render('index', [
+            'searchModel' => $searchModel,
+            'dataProvider' => $dataProvider,
+        ]);
         echo "Hello, man. It's ok, dont worry.";
+    }
+
+    public function actionDelete($id)
+    {
+        $this->findModel($id)->delete();
+
+        return $this->redirect(['index']);
     }
     
     public function actionGetImage($id, $x=null, $y=null, $fit=null) {
@@ -52,5 +67,14 @@ class ImagesController extends Controller
       header('Content-Type: ' . $placeHolder->getMimeType());
       echo(file_get_contents($placeHolder->getPath($params)));
       exit;
+    }
+    
+    protected function findModel($id)
+    {
+        if (($model = Image::findOne($id)) !== null) {
+            return $model;
+        } else {
+            throw new NotFoundHttpException('The requested page does not exist.');
+        }
     }
 }

@@ -52,13 +52,16 @@ class ImageBehave extends Behavior
             throw new \Exception('Cant copy file! ' . $absolutePath . ' to ' . $newFile['newAbsolutePath']);
         }
 
+        $name = isset($params['name']) ? $params['name'] : null;
+        $modelTableName = preg_replace('/[{}%]/', '', $this->owner->tableName());
+        $filePath = $newFile['pictureSubDir'] . DIRECTORY_SEPARATOR . $newFile['filename'];
         $image = new Image([
           'itemId' => $this->owner->primaryKey,
-          'filePath' =>  $newFile['pictureSubDir'] . DIRECTORY_SEPARATOR . $newFile['filename'],
-          'modelTableName' => preg_replace('/[{}%]/', '', $this->owner->tableName()),
-          'name' => isset($params['name']) ? $params['name'] : null,
+          'filePath' => $filePath,
+          'modelTableName' => $modelTableName,
+          'name' => $name,
         ]);
-
+        $image->sortOrder = $image->find()->where(['itemId' => $image->itemId, 'modelTableName' => $image->modelTableName, 'name' => $image->name])->max('sortOrder') + 1;
 
         if(!$image->save()){
             $ar = array_shift($image->getErrors());
@@ -95,26 +98,10 @@ class ImageBehave extends Behavior
         if ($this->owner->primaryKey != $img->itemId) {
             throw new \Exception('Image must belong to this model');
         }
-        $counter = 1;
+
         /* @var $img Image */
         $img->setMain(true);
-        $img->urlAlias = $this->getAliasString() . '-' . $counter;
         $img->save();
-
-
-        $images = $this->owner->getImages();
-        foreach ($images as $allImg) {
-
-            if ($allImg->id == $img->id) {
-                continue;
-            } else {
-                $counter++;
-            }
-
-            $allImg->setMain(false);
-            $allImg->urlAlias = $this->getAliasString() . '-' . $counter;
-            $allImg->save();
-        }
 
         $this->owner->clearImagesCache();
     }
@@ -126,13 +113,15 @@ class ImageBehave extends Behavior
      */
     public function clearImagesCache()
     {
+        return true;
         $cachePath = $this->getModule()->getCachePath();
         $subdir = $this->getModule()->getModelSubDir($this->owner);
 
         $dirToRemove = $cachePath . '/' . $subdir;
+        edump($dirToRemove);
 
         if (preg_match('/' . preg_quote($cachePath, '/') . '/', $dirToRemove)) {
-            BaseFileHelper::removeDirectory($dirToRemove);
+            FileHelper::removeDirectory($dirToRemove);
             //exec('rm -rf ' . $dirToRemove);
             return true;
         } else {
@@ -237,15 +226,11 @@ class ImageBehave extends Behavior
      */
     public function removeImage(Image $img)
     {
-        $img->clearCache();
-
-        $storePath = $this->getModule()->getStorePath();
-
-        $fileToRemove = $storePath . DIRECTORY_SEPARATOR . $img->filePath;
-        if (preg_match('@\.@', $fileToRemove) and is_file($fileToRemove)) {
-            unlink($fileToRemove);
+        if ($this->owner->primaryKey != $img->itemId) {
+            throw new \Exception('Image must belong to this model');
         }
-        $img->delete();
+        
+        return $img->delete();
     }
     
     private function getNewFilename($absolutePath){
