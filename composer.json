@@ -13,8 +13,7 @@
     ],
     "minimum-stability": "dev",
     "require": {
-        "yiisoft/yii2": "*",
-        "abeautifulsite/simpleimage": "*"
+        "yiisoft/yii2-imagine": "*"
     },
     "require-dev": {
         "yiisoft/yii2-codeception": "*",
