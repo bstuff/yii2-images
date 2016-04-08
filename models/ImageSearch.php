@@ -61,7 +61,7 @@ class ImageSearch extends Image
 		]);
 
     $query->andFilterWhere(['like', 'filePath', $this->filePath])
-        ->andFilterWhere(['like', 'name', $this->name]);
+        ->andFilterWhere(['like', 'name', $this->name])
         ->andFilterWhere(['like', 'modelTableName', $this->modelTableName]);
 
 		return $dataProvider;

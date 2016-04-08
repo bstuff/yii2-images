@@ -84,7 +84,9 @@ class ImageBehave extends Behavior
         ){
             $this->setMainImage($image);
         }
-
+        if ($thumbnailSize = $this->getModule()->thumbnailSize) {
+          $image->getUrl($this->getModule()->parseSuffix($thumbnailSize));
+        }
         return $image;
     }
 

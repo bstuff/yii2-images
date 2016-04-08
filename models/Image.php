@@ -97,7 +97,32 @@ class Image extends \yii\db\ActiveRecord
         ];
     }
 
-    public function getUrl($params = []){
+    public function fields() 
+    {
+      return [
+        'id', 'filePath', 'thumbnailPath', 'modelTableName', 'name', 'sortOrder' 
+      ];
+    }
+    
+    public function getThumbnailPath() {
+      if ($thumbnailSize = $this->getModule()->thumbnailSize) {
+        $start = strlen(FileHelper::normalizePath($this->getModule()->getCachePath())) + 1;
+        return 
+          substr(
+            FileHelper::normalizePath(
+              $this->getFilepath(
+                $this->getModule()->parseSuffix(
+                  $thumbnailSize
+                )
+              )
+            )
+          , $start);
+      }
+      
+      return $this->filePath;
+    }
+    
+    public function getUrl($params = []) {
         $params['id'] = $this->id;
 
         $filePath = FileHelper::normalizePath($this->getFilepath($params));
@@ -115,7 +140,7 @@ class Image extends \yii\db\ActiveRecord
         return $url;
     }
 
-    public function getPath($params = []){
+    public function getPath($params = []) {
         $filePath = FileHelper::normalizePath($this->getFilepath($params));
         if(!file_exists($filePath)){
             throw new \Exception('Такого размера картинки нет.');
@@ -123,20 +148,20 @@ class Image extends \yii\db\ActiveRecord
         return $filePath;
     }
     
-    public function getExtension(){
+    public function getExtension() {
         $ext = pathinfo($this->getPathToOrigin(), PATHINFO_EXTENSION);
         return $ext;
     }
 
-    public function getMimeType(){
+    public function getMimeType() {
         return FileHelper::getMimeType($this->getPathToOrigin());
     }
 
-    public function getFilename(){
+    public function getFilename() {
        return pathinfo($this->getPathToOrigin(), PATHINFO_FILENAME);
     }
 
-    private function getFilepath($params = []){
+    private function getFilepath($params = []) {
         $pathinfo = pathinfo($this->filePath);
         return $this->getModule()->getCachePath()
           .DIRECTORY_SEPARATOR

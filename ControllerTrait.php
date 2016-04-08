@@ -20,7 +20,7 @@ trait ControllerTrait
 	    if (!$file) $file = $uploadedFile->getInstanceByName(0);
 	    if (!$file) $file = $uploadedFile->getInstanceByName(array_keys($_FILES)[0]);
 	    if (!$file) throw new \yii\base\ErrorException('uploaded file not found');
-	    
+	    	    
 	    $model->attachImage($file->tempName, [
   	    'main' => Yii::$app->request->post('isMain', false),
   	    'name' => ($name === '0') ? null : $name,
