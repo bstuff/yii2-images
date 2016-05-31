@@ -253,11 +253,23 @@ class Image extends \yii\db\ActiveRecord
         if (parent::beforeDelete()) {
             if ($this->isUnique()) {
               $this->clearCache();
-              unlink($this->getModule()->getStorePath() . DIRECTORY_SEPARATOR . $this->filePath);
+              try {
+                unlink($this->getModule()->getStorePath() . DIRECTORY_SEPARATOR . $this->filePath);
+              } catch (\Exception $e) {
+                echo($e->message);
+              }
             }
             return true;
         } else {
             return false;
         }
+    }
+    
+    public static function swapImages(Image $img1, Image $img2) {
+			$tmp1 = $img1->id;
+			$tmp2 = $img2->id;
+			list($img1->sortOrder, $img2->sortOrder) = [$img2->sortOrder, $img1->sortOrder];
+			$img1->save();
+			$img2->save();
     }
 }
